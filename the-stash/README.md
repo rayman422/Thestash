@@ -44,7 +44,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Optionally set your OpenAI API key for higher-quality AI posts:
+Optional: Use OpenAI (paid) by setting your API key:
 ```bash
 export OPENAI_API_KEY=your_key_here
 ```
@@ -54,6 +54,16 @@ export OPENAI_API_KEY=your_key_here
 Fetch news, generate a post, and build the site (one-off):
 ```bash
 PYTHONPATH=src python3 -m stash.main publish
+```
+
+Use Ollama (no API key, runs locally):
+```bash
+# Install Ollama: https://ollama.com
+# Pull a model (suggested):
+ollama pull llama3.2:3b
+
+# Run publish with Ollama
+PYTHONPATH=src python3 -m stash.main publish --provider ollama --model "llama3.2:3b"
 ```
 
 Run the continuous scheduler (4:20 AM/PM):

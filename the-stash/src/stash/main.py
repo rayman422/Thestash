@@ -41,7 +41,10 @@ def publish_once(no_ai: bool = False) -> None:
 		items=items,
 		model=config.generation.model,
 		max_words=config.generation.max_words,
-		use_openai=(config.generation.use_openai and not no_ai),
+		use_openai=False,
+		provider=config.generation.provider,
+		ollama_base_url=config.generation.ollama_base_url,
+		openai_model=config.generation.openai_model,
 	)
 
 	created_at = datetime.now()
@@ -111,6 +114,7 @@ def publish_once(no_ai: bool = False) -> None:
 
 	# Save assets and history
 	slug = rel_path.split("/")[-1].replace(".html", "")
+	used_ai_flag = (config.generation.provider in ("ollama", "openai") and not no_ai)
 	save_post_assets(
 		content_dir=config.site.content_dir,
 		slug=slug,
@@ -119,8 +123,8 @@ def publish_once(no_ai: bool = False) -> None:
 		created_at_iso=created_at.isoformat(),
 		markdown_content=markdown,
 		sources=source_meta,
-		used_ai=(config.generation.use_openai and not no_ai),
-		model_name=(config.generation.model if (config.generation.use_openai and not no_ai) else None),
+		used_ai=used_ai_flag,
+		model_name=(config.generation.model if used_ai_flag else None),
 	)
 	append_history({"slug": slug, "title": title, "url": rel_path, "created_at": created_at.isoformat(), "num_sources": len(source_meta)})
 
@@ -141,11 +145,18 @@ def main() -> None:
 	sub = parser.add_subparsers(dest="cmd", required=True)
 
 	publish = sub.add_parser("publish", help="Fetch, generate, and build one post")
-	publish.add_argument("--no-ai", action="store_true", help="Disable OpenAI and use fallback")
+	publish.add_argument("--provider", choices=["ollama","openai","none"], default=None, help="Generation provider")
+	publish.add_argument("--model", default=None, help="Model name (provider-specific)")
+	publish.add_argument("--no-ai", action="store_true", help="Disable AI and use fallback")
 
 	args = parser.parse_args()
 	if args.cmd == "publish":
-		publish_once(no_ai=args.no_ai)
+		from .config import DEFAULT_CONFIG as C
+		if args.provider:
+			C.generation.provider = args.provider
+		if args.model:
+			C.generation.model = args.model
+		publish_once(no_ai=(args.no_ai or C.generation.provider == "none"))
 
 
 if __name__ == "__main__":

@@ -38,9 +38,13 @@ class AggregatorConfig:
 
 @dataclass
 class GenerationConfig:
-	model: str = "gpt-4o-mini"
+	# Provider can be: 'ollama', 'openai', 'none'
+	provider: str = os.getenv("GEN_PROVIDER", "ollama")
+	# Default model for provider
+	model: str = os.getenv("GEN_MODEL", "llama3.2:3b")
+	openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+	ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 	max_words: int = 900
-	use_openai: bool = True
 
 
 @dataclass

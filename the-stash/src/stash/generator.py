@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 from dataclasses import dataclass
@@ -50,6 +49,19 @@ def generate_with_openai(model: str, prompt: str) -> str:
 	return resp.choices[0].message.content.strip()
 
 
+def generate_with_ollama(model: str, prompt: str, base_url: str = "http://localhost:11434") -> str:
+	import requests
+	resp = requests.post(
+		f"{base_url}/api/generate",
+		json={"model": model, "prompt": prompt, "stream": False, "options": {"temperature": 0.8}},
+		timeout=120,
+	)
+	resp.raise_for_status()
+	data = resp.json()
+	text = data.get("response") or data.get("message") or ""
+	return (text or "").strip()
+
+
 def fallback_generate(items: List[AggregatedItem], max_words: int) -> str:
 	sections: List[str] = []
 	sections.append("# The Stash Roundup")
@@ -60,12 +72,17 @@ def fallback_generate(items: List[AggregatedItem], max_words: int) -> str:
 	return "\n\n".join(sections)[: max_words * 6]
 
 
-def generate_post(site_name: str, items: List[AggregatedItem], model: str, max_words: int, use_openai: bool) -> str:
+def generate_post(site_name: str, items: List[AggregatedItem], model: str, max_words: int, use_openai: bool, provider: str = "ollama", ollama_base_url: str = "http://localhost:11434", openai_model: str | None = None) -> str:
 	prompt = _compose_prompt(site_name, items, max_words)
-	if use_openai:
+	if provider == "openai" or use_openai:
 		try:
-			return generate_with_openai(model, prompt)
+			return generate_with_openai(openai_model or model, prompt)
 		except Exception as exc:
 			LOGGER.warning("OpenAI generation failed, falling back: %s", exc)
+	elif provider == "ollama":
+		try:
+			return generate_with_ollama(model, prompt, base_url=ollama_base_url)
+		except Exception as exc:
+			LOGGER.warning("Ollama generation failed, falling back: %s", exc)
 	return fallback_generate(items, max_words)
 
