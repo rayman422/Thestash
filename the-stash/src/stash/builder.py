@@ -37,6 +37,7 @@ def write_post(
 	title: str,
 	markdown_content: str,
 	created_at: datetime,
+	sources: list | None = None,
 ) -> str:
 	"""Render and write a single post page; returns relative URL."""
 	env = build_env(templates_dir)
@@ -69,6 +70,7 @@ def write_post(
 		title=title,
 		content_html=content_html,
 		created_at=created_at,
+		sources=(sources or []),
 	)
 	output_path.write_text(html, encoding="utf-8")
 
@@ -92,4 +94,21 @@ def build_index(
 	)
 	Path(output_dir).mkdir(parents=True, exist_ok=True)
 	(Path(output_dir) / "index.html").write_text(index_html, encoding="utf-8")
+
+
+def build_about(
+	output_dir: str,
+	templates_dir: str,
+	site_name: str,
+	site_tagline: str,
+) -> None:
+	env = build_env(templates_dir)
+	about_tpl = env.get_template("about.html")
+	about_html = about_tpl.render(
+		site_name=site_name,
+		site_tagline=site_tagline,
+		title=f"About — {site_name}",
+	)
+	Path(output_dir).mkdir(parents=True, exist_ok=True)
+	(Path(output_dir) / "about.html").write_text(about_html, encoding="utf-8")
 

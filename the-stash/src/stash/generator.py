@@ -13,7 +13,10 @@ LOGGER = logging.getLogger(__name__)
 
 def _compose_prompt(site_name: str, items: List[AggregatedItem], max_words: int) -> str:
 	bullet_lines: List[str] = []
-	for it in items[:12]:
+	news = [it for it in items if getattr(it, "category", "news") == "news"]
+	strains = [it for it in items if getattr(it, "category", "news") == "strain"]
+	ordered = news[:8] + strains[:4]
+	for it in ordered[:12]:
 		date_str = it.published.isoformat() if it.published else "unknown"
 		bullet_lines.append(
 			f"- {it.title} — {it.source} ({date_str})\n  {it.summary[:320]}\n  {it.url}"

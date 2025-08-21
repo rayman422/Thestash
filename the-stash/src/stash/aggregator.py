@@ -28,6 +28,7 @@ class AggregatedItem:
 	source: str
 	published: Optional[datetime]
 	summary: str
+	category: Optional[str] = None
 
 
 def fetch_rss_items(feed_url: str, limit: int, timeout_seconds: int) -> List[AggregatedItem]:
@@ -139,4 +140,17 @@ def summarize_for_prompt(items: List[AggregatedItem], max_items: int = 12) -> st
 		date_str = it.published.isoformat() if it.published else "unknown"
 		parts.append(f"- {it.title} (source: {it.source}, date: {date_str})\n  {it.summary[:280]}\n  Link: {it.url}")
 	return "\n".join(parts)
+
+
+def categorize_items(items: List[AggregatedItem]) -> List[AggregatedItem]:
+	"""Tag items as 'strain' or 'news' using simple keyword heuristics."""
+	strain_keywords = [
+		"strain", "strains", "indica", "sativa", "hybrid", "cultivar", "terpene",
+		"seed", "seeds", "flower", "buds", "kush", "haze", "skunk", "og ", "gelato",
+		"sherb", "cookie", "cake", "rcb", "resin", "hash",
+	]
+	for it in items:
+		text = f"{it.title} {it.summary}".lower()
+		it.category = "strain" if any(k in text for k in strain_keywords) else "news"
+	return items
 

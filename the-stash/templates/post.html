@@ -4,6 +4,16 @@
   <h1 class="post-title">{{ title }}</h1>
   <p class="post-date">Published {{ created_at.strftime('%B %d, %Y %I:%M %p') }}</p>
   <div class="post-content">{{ content_html|safe }}</div>
+  {% if sources %}
+  <section class="sources">
+    <h3>Sources</h3>
+    <ul>
+      {% for s in sources %}
+      <li><span class="badge">{{ s.category|capitalize }}</span> <a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a> — {{ s.source }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
   <p><a href="/">← Back to The Stash</a></p>
 {% endblock %}
 
