@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="post">
+  <h1 class="post-title">{{ title }}</h1>
+  <p class="post-date">Published {{ created_at.strftime('%B %d, %Y %I:%M %p') }}</p>
+  <div class="post-content">{{ content_html|safe }}</div>
+  <p><a href="/">← Back to The Stash</a></p>
+{% endblock %}
+

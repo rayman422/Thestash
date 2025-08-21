@@ -1,0 +1,16 @@
+:root{--bg:#0b0f0d;--fg:#e6f1ef;--muted:#97a2a0;--brand:#6ad79c;--accent:#b991f5}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
+.container{max-width:920px;margin:0 auto;padding:1.2rem}
+.site-header{border-bottom:1px solid #15201b;background:linear-gradient(180deg,rgba(106,215,156,.12),transparent)}
+.site-title{margin:0;font-size:1.6rem}
+.site-title a{color:var(--fg);text-decoration:none}
+.site-tagline{margin:.2rem 0 0 0;color:var(--muted)}
+.post-list{list-style:none;padding:0}
+.post-list li{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-bottom:1px dashed #1e2a25}
+.post-list a{color:var(--brand);text-decoration:none}
+.post-date{color:var(--muted);font-size:.9rem}
+.post-title{font-size:2rem;margin:.2rem 0 0}
+.post-content h2,.post-content h3{color:var(--accent)}
+.post-content p{margin:.8rem 0}
+.site-footer{border-top:1px solid #15201b;color:var(--muted)}

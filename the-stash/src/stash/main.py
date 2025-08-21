@@ -1,0 +1,95 @@
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
+
+from .aggregator import aggregate_news
+from .builder import build_index, write_post
+from .config import DEFAULT_CONFIG
+from .generator import generate_post
+
+
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s %(name)s: %(message)s")
+LOGGER = logging.getLogger(__name__)
+
+
+def publish_once(no_ai: bool = False) -> None:
+	config = DEFAULT_CONFIG
+	LOGGER.info("Aggregating news and strains...")
+	items = aggregate_news(
+		feed_urls=config.aggregator.feed_urls,
+		items_per_source=config.aggregator.items_per_source,
+		max_total_items=config.aggregator.max_total_items,
+		timeout_seconds=config.aggregator.request_timeout_seconds,
+	)
+	LOGGER.info("Fetched %d items", len(items))
+
+	LOGGER.info("Generating post content...")
+	markdown = generate_post(
+		site_name=config.site.site_name,
+		items=items,
+		model=config.generation.model,
+		max_words=config.generation.max_words,
+		use_openai=(config.generation.use_openai and not no_ai),
+	)
+
+	created_at = datetime.now()
+	title = f"The Stash Roundup — {created_at.strftime('%b %d, %Y %I:%M %p')}"
+	LOGGER.info("Writing post page...")
+	rel_path = write_post(
+		output_dir=config.site.output_dir,
+		public_dir=config.site.public_dir,
+		templates_dir=config.site.templates_dir,
+		site_name=config.site.site_name,
+		site_tagline=config.site.site_tagline,
+		title=title,
+		markdown_content=markdown,
+		created_at=created_at,
+	)
+
+	LOGGER.info("Updating index page...")
+	index_json_path = Path(config.site.output_dir) / "posts.json"
+	posts_meta = []
+	if index_json_path.exists():
+		try:
+			posts_meta = json.loads(index_json_path.read_text(encoding="utf-8"))
+		except Exception:
+			posts_meta = []
+	posts_meta.insert(0, {
+		"title": title,
+		"url": rel_path,
+		"created_at": created_at.isoformat(),
+	})
+	posts_meta = posts_meta[: config.site.index_page_size]
+	index_json_path.parent.mkdir(parents=True, exist_ok=True)
+	index_json_path.write_text(json.dumps(posts_meta, indent=2), encoding="utf-8")
+
+	build_index(
+		output_dir=config.site.output_dir,
+		templates_dir=config.site.templates_dir,
+		site_name=config.site.site_name,
+		site_tagline=config.site.site_tagline,
+		posts=posts_meta,
+	)
+
+	LOGGER.info("Publish complete: %s", rel_path)
+
+
+def main() -> None:
+	parser = argparse.ArgumentParser(description="The Stash CLI")
+	sub = parser.add_subparsers(dest="cmd", required=True)
+
+	publish = sub.add_parser("publish", help="Fetch, generate, and build one post")
+	publish.add_argument("--no-ai", action="store_true", help="Disable OpenAI and use fallback")
+
+	args = parser.parse_args()
+	if args.cmd == "publish":
+		publish_once(no_ai=args.no_ai)
+
+
+if __name__ == "__main__":
+	main()
+
