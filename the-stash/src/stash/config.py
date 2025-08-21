@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
 from typing import List
 
 
@@ -8,7 +9,7 @@ from typing import List
 class SiteConfig:
 	site_name: str = "The Stash"
 	site_tagline: str = "A mellow stash of cannabis news and strains"
-	base_url: str = ""  # Optional: e.g., https://thestash.example.com
+	base_url: str = os.getenv("BASE_URL", "")  # Optional: e.g., https://user.github.io/the-stash
 	output_dir: str = "site"
 	content_dir: str = "content/posts"
 	templates_dir: str = "templates"

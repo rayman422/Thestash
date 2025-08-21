@@ -91,3 +91,18 @@ python3 -m http.server --directory site 8080
 - The fallback generator uses extractive summaries if OpenAI is not configured.
 - Feeds and external sites can change; adjust sources as needed.
 
+### GitHub Pages Deployment
+
+1) Create a repo and push this project.
+2) Set default branch to `main`.
+3) In Settings → Pages: Source = GitHub Actions.
+4) Add optional variables/secrets:
+- Repository variable `BASE_URL` (e.g., `https://<user>.github.io/<repo>`)
+- Repository secret `OPENAI_API_KEY` (optional)
+
+The workflow `.github/workflows/gh-pages.yml` will:
+- Build on pushes to `main`
+- Run on schedule at 04:20 and 16:20 UTC
+- Publish the `site/` folder to Pages
+
+
