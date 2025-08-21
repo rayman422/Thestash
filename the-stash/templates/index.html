@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <h2>Peace, Love, and Lifted News ✌️</h2>
+    <p>Scooping the dankest cannabis stories and strains — twice daily at 4:20.</p>
+  </div>
+  <div class="hero-waves" aria-hidden="true"></div>
+</section>
+<section>
+  {% if posts|length == 0 %}
+    <p>No posts yet. Check back at 4:20!</p>
+  {% else %}
+    <ul class="post-list">
+      {% for post in posts %}
+      <li>
+        <a href="{{ asset_prefix }}/{{ post.url }}">{{ post.title }}</a>
+        <span class="post-date">{{ post.created_at[:16].replace('T',' ') }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}
+
