@@ -56,15 +56,18 @@ def publish_once(no_ai: bool = False) -> None:
 		for it in items[:12]
 	]
 
-	# Determine asset prefix for GH Pages deployments (base_url path)
-	asset_prefix = ""
+	# Determine asset prefixes for GH Pages deployments and relative paths
+	base_path = ""
 	if config.site.base_url:
 		try:
 			from urllib.parse import urlparse
 			p = urlparse(config.site.base_url)
-			asset_prefix = (p.path or "").rstrip("/")
+			base_path = (p.path or "").rstrip("/")
 		except Exception:
-			asset_prefix = ""
+			base_path = ""
+	# index/about use base_path or './'; posts use base_path or '../'
+	asset_prefix_index = base_path if base_path else "."
+	asset_prefix_post = base_path if base_path else ".."
 
 	rel_path = write_post(
 		output_dir=config.site.output_dir,
@@ -76,7 +79,7 @@ def publish_once(no_ai: bool = False) -> None:
 		markdown_content=markdown,
 		created_at=created_at,
 		sources=source_meta,
-		asset_prefix=asset_prefix,
+		asset_prefix=asset_prefix_post,
 	)
 
 	LOGGER.info("Updating index page...")
@@ -102,14 +105,14 @@ def publish_once(no_ai: bool = False) -> None:
 		site_name=config.site.site_name,
 		site_tagline=config.site.site_tagline,
 		posts=posts_meta,
-		asset_prefix=asset_prefix,
+		asset_prefix=asset_prefix_index,
 	)
 	build_about(
 		output_dir=config.site.output_dir,
 		templates_dir=config.site.templates_dir,
 		site_name=config.site.site_name,
 		site_tagline=config.site.site_tagline,
-		asset_prefix=asset_prefix,
+		asset_prefix=asset_prefix_index,
 	)
 
 	# Save assets and history

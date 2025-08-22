@@ -10,7 +10,7 @@ class SiteConfig:
 	site_name: str = "The Stash"
 	site_tagline: str = "A mellow stash of cannabis news and strains"
 	base_url: str = os.getenv("BASE_URL", "")  # Optional: e.g., https://user.github.io/the-stash
-	output_dir: str = "site"
+	output_dir: str = os.getenv("OUTPUT_DIR", "site")
 	content_dir: str = "content/posts"
 	templates_dir: str = "templates"
 	public_dir: str = "public"

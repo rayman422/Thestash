@@ -15,9 +15,15 @@ jobs:
       contents: write
       pages: write
       id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,7 +40,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           BASE_URL: ${{ vars.BASE_URL }}
         run: |
-          PYTHONPATH=src python -m stash.main publish
+          PYTHONPATH=src python -m stash.main publish --provider "${GEN_PROVIDER:-none}"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -42,4 +48,5 @@ jobs:
           path: site
 
       - name: Deploy to Pages
+        id: deployment
         uses: actions/deploy-pages@v4
