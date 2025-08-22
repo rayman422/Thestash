@@ -10,6 +10,7 @@ from typing import List
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import markdown2
+import shutil
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,12 +51,15 @@ def write_post(
 	_ensure_dir(os.path.join(output_dir, "posts"))
 	_ensure_dir(public_dir)
 
-	# Copy public assets (simple copy of css only for now)
-	css_src = Path(public_dir) / "css" / "styles.css"
-	css_dst = Path(output_dir) / "css" / "styles.css"
-	css_dst.parent.mkdir(parents=True, exist_ok=True)
-	if css_src.exists():
-		css_dst.write_text(css_src.read_text(encoding="utf-8"), encoding="utf-8")
+	# Copy all public assets recursively (css, js, etc.)
+	pub_path = Path(public_dir)
+	for child in pub_path.iterdir():
+		dst = Path(output_dir) / child.name
+		if child.is_dir():
+			shutil.copytree(child, dst, dirs_exist_ok=True)
+		elif child.is_file():
+			_ensure_dir(dst.parent)
+			shutil.copy2(child, dst)
 
 	slug_date = created_at.strftime("%Y-%m-%d-%H%M")
 	slug_title = "the-stash-roundup"

@@ -1,25 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-  <div class="hero-inner">
-    <h2>Peace, Love, and Lifted News ✌️</h2>
-    <p>Scooping the dankest cannabis stories and strains — twice daily at 4:20.</p>
-  </div>
-  <div class="hero-waves" aria-hidden="true"></div>
-</section>
-<section>
-  {% if posts|length == 0 %}
-    <p>No posts yet. Check back at 4:20!</p>
-  {% else %}
-    <ul class="post-list">
-      {% for post in posts %}
-      <li>
-        <a href="{{ asset_prefix }}/{{ post.url }}">{{ post.title }}</a>
-        <span class="post-date">{{ post.created_at[:16].replace('T',' ') }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-</section>
+<main class="container">
+	<div class="blog-grid">
+		{% if posts|length > 0 %}
+		<article class="blog-card featured-post">
+			<div class="card-content">
+				<span class="card-category">Featured Roundup</span>
+				<h2 class="card-title">{{ posts[0].title }}</h2>
+				<p class="card-excerpt">Your twice-daily AI roundup of cannabis news and strains. Catch the latest drop from The Stash.</p>
+				<a href="{{ asset_prefix }}/{{ posts[0].url }}" class="read-more">Read Latest →</a>
+			</div>
+		</article>
+		{% endif %}
+
+		{% for post in posts[1:] %}
+		<article class="blog-card">
+			<div class="card-content">
+				<span class="card-category">Roundup</span>
+				<h3 class="card-title">{{ post.title }}</h3>
+				<p class="card-excerpt">Published {{ post.created_at[:16].replace('T',' ') }} — A mellow tour of what's burning today.</p>
+				<a href="{{ asset_prefix }}/{{ post.url }}" class="read-more">Read More →</a>
+			</div>
+		</article>
+		{% endfor %}
+	</div>
+
+	<div class="wavy-divider"></div>
+
+	<section class="newsletter">
+		<h2 class="pulsing">Join the Cosmic Community</h2>
+		<p>Stay connected with twice-daily roundups from The Stash. No spam, just fresh picks at 4:20.</p>
+		<form class="newsletter-form">
+			<input type="email" placeholder="you@stashmail.com" required>
+			<button type="submit">Subscribe</button>
+		</form>
+	</section>
+</main>
 {% endblock %}
 
