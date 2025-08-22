@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: http://localhost/sitemap.xml
+Sitemap: https://rayman422.github.io/Thestash/sitemap.xml
