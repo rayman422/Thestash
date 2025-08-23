@@ -114,6 +114,17 @@ python3 manage_cache.py clean
 python3 manage_cache.py site
 ```
 
+### Troubleshooting
+
+**Website appears blank or unstyled:**
+- The project uses relative paths for CSS and assets
+- Make sure to serve from the `site/` directory: `cd site && python3 -m http.server 8080`
+- If serving from the project root, CSS paths will be incorrect
+
+**Empty posts:**
+- Clear the seen URLs cache: `python3 manage_cache.py clear`
+- Regenerate content: `PYTHONPATH=src python3 -m stash.main publish --no-ai`
+
 ### Notes
 - The fallback generator uses extractive summaries if OpenAI is not configured.
 - Feeds and external sites can change; adjust sources as needed.
