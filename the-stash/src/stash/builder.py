@@ -19,6 +19,22 @@ def _ensure_dir(path: str | Path) -> None:
 	p.mkdir(parents=True, exist_ok=True)
 
 
+def _ensure_css_copied(output_dir: str, templates_dir: str) -> None:
+	"""Ensure CSS file is copied to the output directory."""
+	# Find the public directory (it should be at the same level as templates)
+	templates_path = Path(templates_dir)
+	public_dir = templates_path.parent / "public"
+	css_src = public_dir / "css" / "styles.css"
+	css_dst = Path(output_dir) / "css" / "styles.css"
+	
+	if css_src.exists():
+		css_dst.parent.mkdir(parents=True, exist_ok=True)
+		css_dst.write_text(css_src.read_text(encoding="utf-8"), encoding="utf-8")
+		LOGGER.info("CSS copied to %s", css_dst)
+	else:
+		LOGGER.warning("CSS source not found at %s", css_src)
+
+
 def build_env(templates_dir: str) -> Environment:
 	return Environment(
 		loader=FileSystemLoader(templates_dir),
@@ -50,12 +66,8 @@ def write_post(
 	_ensure_dir(os.path.join(output_dir, "posts"))
 	_ensure_dir(public_dir)
 
-	# Copy public assets (simple copy of css only for now)
-	css_src = Path(public_dir) / "css" / "styles.css"
-	css_dst = Path(output_dir) / "css" / "styles.css"
-	css_dst.parent.mkdir(parents=True, exist_ok=True)
-	if css_src.exists():
-		css_dst.write_text(css_src.read_text(encoding="utf-8"), encoding="utf-8")
+	# Ensure CSS is copied
+	_ensure_css_copied(output_dir, templates_dir)
 
 	slug_date = created_at.strftime("%Y-%m-%d-%H%M")
 	slug_title = "the-stash-roundup"
@@ -90,6 +102,9 @@ def build_index(
 	env = build_env(templates_dir)
 	index_tpl = env.get_template("index.html")
 
+	# Ensure CSS is copied
+	_ensure_css_copied(output_dir, templates_dir)
+
 	index_html = index_tpl.render(
 		site_name=site_name,
 		site_tagline=site_tagline,
@@ -109,6 +124,10 @@ def build_about(
 ) -> None:
 	env = build_env(templates_dir)
 	about_tpl = env.get_template("about.html")
+	
+	# Ensure CSS is copied
+	_ensure_css_copied(output_dir, templates_dir)
+	
 	about_html = about_tpl.render(
 		site_name=site_name,
 		site_tagline=site_tagline,
