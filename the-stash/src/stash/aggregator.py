@@ -64,7 +64,15 @@ def fetch_rss_items(feed_url: str, limit: int, timeout_seconds: int) -> List[Agg
 def strip_html(html_text: str) -> str:
 	if not html_text:
 		return ""
-	return re.sub(re.compile(r"<[^>]+>"), "", html_text).strip()
+	# Remove HTML tags
+	cleaned = re.sub(re.compile(r"<[^>]+>"), "", html_text)
+	# Decode common HTML entities
+	import html
+	cleaned = html.unescape(cleaned)
+	# Clean up Reddit-specific formatting
+	cleaned = re.sub(r'\s+submitted by\s+\s+/u/\w+\s+\[link\]\s+\[comments\]', '', cleaned)
+	cleaned = re.sub(r'\s+\[link\]\s+\[comments\]', '', cleaned)
+	return cleaned.strip()
 
 
 def enrich_with_og_description(item: AggregatedItem, timeout_seconds: int) -> AggregatedItem:

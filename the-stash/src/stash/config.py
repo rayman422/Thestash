@@ -27,8 +27,8 @@ class AggregatorConfig:
 			"https://cannabisnow.com/feed/",
 			# Culture/industry
 			"https://www.leafly.com/news/feed",  # May change; aggregator handles failures
-			# Community
-			"https://www.reddit.com/r/trees/.rss",
+					# Community
+		"https://www.reddit.com/r/trees/.rss?limit=10",
 		]
 	)
 	items_per_source: int = 5
