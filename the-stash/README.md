@@ -97,6 +97,23 @@ Serve the built site with any static server, e.g.:
 python3 -m http.server --directory site 8080
 ```
 
+### Cache Management
+The project uses a seen URLs cache to avoid duplicate content. If you're getting empty posts, the cache might be full:
+
+```bash
+# Clear the cache to allow re-processing of content
+python3 manage_cache.py clear
+
+# View cache statistics
+python3 manage_cache.py stats
+
+# Clean old posts (older than 7 days)
+python3 manage_cache.py clean
+
+# Show site statistics
+python3 manage_cache.py site
+```
+
 ### Notes
 - The fallback generator uses extractive summaries if OpenAI is not configured.
 - Feeds and external sites can change; adjust sources as needed.
