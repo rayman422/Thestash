@@ -14,7 +14,7 @@
     <ul class="post-list">
       {% for post in posts %}
       <li>
-        <a href="{{ asset_prefix }}/{{ post.url }}">{{ post.title }}</a>
+        <a href="{{ asset_prefix }}{{ post.url }}">{{ post.title }}</a>
         <span class="post-date">{{ post.created_at[:16].replace('T',' ') }}</span>
       </li>
       {% endfor %}
