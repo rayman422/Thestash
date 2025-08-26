@@ -1,37 +1,26 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title if title else site_name }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Cabin:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ asset_prefix }}/css/styles.css">
-  <link rel="alternate" type="application/rss+xml" title="RSS" href="{{ asset_prefix }}/feed.xml" />
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{{ title or 'The Stash' }}</title>
+	<link rel="stylesheet" href="{{ (base_url or '') + '/css/styles.css' }}">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <div class="nav">
-        <h1 class="site-title"><a href="{{ asset_prefix }}/index.html">{{ site_name }}</a></h1>
-        <nav class="site-nav">
-          <a href="{{ asset_prefix }}/index.html">Home</a>
-          <a href="{{ asset_prefix }}/about.html">About</a>
-          <a href="{{ asset_prefix }}/feed.xml">RSS</a>
-        </nav>
-      </div>
-      <p class="site-tagline">{{ site_tagline }}</p>
-    </div>
-  </header>
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
-  <footer class="site-footer">
-    <div class="container">
-      <p>© {{ site_name }} — Auto-published at 4:20 AM/PM</p>
-    </div>
-  </footer>
+	<header>
+		<div class="container">
+			<a href="{{ base_url or '/' }}" style="color:inherit; text-decoration:none"><h1 style="margin:0">The Stash</h1></a>
+			<p class="meta" style="margin:4px 0 0 0">THC blog that auto-posts AI articles at 4:20</p>
+		</div>
+	</header>
+	<main>
+		<div class="container">
+			{% block content %}{% endblock %}
+		</div>
+	</main>
+	<footer>
+		<div class="container"><span class="meta">&copy; {{ year }} The Stash</span></div>
+	</footer>
 </body>
 </html>
 

@@ -1,28 +1,33 @@
 from __future__ import annotations
 
-import logging
 from datetime import datetime
 
 import pytz
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
 
-from .main import publish_once
+from .config import load_config_from_env
+from .main import run_publish
 
-LOGGER = logging.getLogger(__name__)
+
+def _job():
+	cfg = load_config_from_env()
+	# Use configured provider if set in env; default is fallback if no key
+	run_publish(cfg, provider=None, model=None, no_ai=False, offline=False)
 
 
-def start_scheduler(timezone_name: str = "America/Los_Angeles") -> None:
-	"""Run a scheduler that triggers publish at 4:20 AM and 4:20 PM."""
-	scheduler = BlockingScheduler(timezone=pytz.timezone(timezone_name))
+def start_scheduler() -> None:
+	cfg = load_config_from_env()
+	tz = pytz.timezone(cfg.site.timezone)
+	scheduler = BlockingScheduler(timezone=tz)
 
-	def _job():
-		LOGGER.info("Scheduler triggering publish at %s", datetime.now())
-		publish_once()
+	# 4:20 AM and 4:20 PM
+	scheduler.add_job(_job, CronTrigger(hour=4, minute=20, timezone=tz), id="stash-0420")
+	scheduler.add_job(_job, CronTrigger(hour=16, minute=20, timezone=tz), id="stash-1620")
 
-	# 4:20 AM and 4:20 PM local time
-	scheduler.add_job(_job, "cron", hour=4, minute=20, id="four_twenty_am", replace_existing=True)
-	scheduler.add_job(_job, "cron", hour=16, minute=20, id="four_twenty_pm", replace_existing=True)
-
-	LOGGER.info("Starting scheduler for 4:20 AM/PM jobs")
-	scheduler.start()
+	print(f"Scheduler starting with timezone {cfg.site.timezone}...")
+	try:
+		scheduler.start()
+	except (KeyboardInterrupt, SystemExit):
+		print("Scheduler stopped.")
 
