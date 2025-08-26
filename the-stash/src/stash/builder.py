@@ -1,120 +1,125 @@
 from __future__ import annotations
 
 import json
-import logging
-import os
+import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import markdown2
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-LOGGER = logging.getLogger(__name__)
-
-
-def _ensure_dir(path: str | Path) -> None:
-	p = Path(path)
-	p.mkdir(parents=True, exist_ok=True)
+from .config import AppConfig
+from .generator import GeneratedPost
 
 
-def build_env(templates_dir: str) -> Environment:
+@dataclass
+class PostRecord:
+	title: str
+	slug: str
+	created_at_iso: str
+	excerpt: str
+	markdown_path: str
+	html_path: str
+
+
+def _ensure_dirs(cfg: AppConfig) -> None:
+	(cfg.content_dir).mkdir(parents=True, exist_ok=True)
+	(cfg.site_dir / "posts").mkdir(parents=True, exist_ok=True)
+	(cfg.public_dir / "css").mkdir(parents=True, exist_ok=True)
+
+
+def _env(cfg: AppConfig) -> Environment:
 	return Environment(
-		loader=FileSystemLoader(templates_dir),
+		loader=FileSystemLoader(str(cfg.templates_dir)),
 		autoescape=select_autoescape(["html", "xml"]),
-		trim_blocks=True,
-		lstrip_blocks=True,
 	)
 
 
-def write_post(
-	output_dir: str,
-	public_dir: str,
-	templates_dir: str,
-	site_name: str,
-	site_tagline: str,
-	title: str,
-	markdown_content: str,
-	created_at: datetime,
-	sources: list | None = None,
-	asset_prefix: str = "",
-) -> str:
-	"""Render and write a single post page; returns relative URL."""
-	env = build_env(templates_dir)
-	post_tpl = env.get_template("post.html")
-	index_tpl = env.get_template("index.html")
-	base_tpl = env.get_template("base.html")
-
-	_ensure_dir(output_dir)
-	_ensure_dir(os.path.join(output_dir, "posts"))
-	_ensure_dir(public_dir)
-
-	# Copy public assets (simple copy of css only for now)
-	css_src = Path(public_dir) / "css" / "styles.css"
-	css_dst = Path(output_dir) / "css" / "styles.css"
-	css_dst.parent.mkdir(parents=True, exist_ok=True)
+def _copy_assets(cfg: AppConfig) -> None:
+	# Copy public assets (css, images) into site directory
+	dst_public = cfg.site_dir / "css"
+	dst_public.mkdir(parents=True, exist_ok=True)
+	css_src = cfg.public_dir / "css" / "styles.css"
 	if css_src.exists():
-		css_dst.write_text(css_src.read_text(encoding="utf-8"), encoding="utf-8")
+		shutil.copy2(css_src, dst_public / "styles.css")
 
-	slug_date = created_at.strftime("%Y-%m-%d-%H%M")
-	slug_title = "the-stash-roundup"
-	file_name = f"{slug_date}-{slug_title}.html"
-	output_path = Path(output_dir) / "posts" / file_name
 
-	# Render markdown to HTML before template
-	content_html = markdown2.markdown(markdown_content, extras=["fenced-code-blocks", "tables", "strike", "target-blank-links"])
+def write_post_and_build(cfg: AppConfig, post: GeneratedPost) -> PostRecord:
+	_ensure_dirs(cfg)
 
-	html = post_tpl.render(
-		site_name=site_name,
-		site_tagline=site_tagline,
-		title=title,
-		content_html=content_html,
-		created_at=created_at,
-		sources=(sources or []),
-		asset_prefix=asset_prefix,
+	# Persist markdown content and a small JSON meta file
+	stamp = post.created_at.strftime("%Y%m%d-%H%M%S")
+	md_name = f"{stamp}-{post.slug}.md"
+	json_name = f"{stamp}-{post.slug}.json"
+	md_path = cfg.content_dir / md_name
+	meta_path = cfg.content_dir / json_name
+
+	md_path.write_text(post.markdown, encoding="utf-8")
+
+	excerpt = post.markdown.splitlines()[0].lstrip("# ").strip() if post.markdown.strip() else post.title
+	meta = {
+		"title": post.title,
+		"slug": post.slug,
+		"created_at": post.created_at.isoformat(),
+		"excerpt": excerpt,
+		"markdown": str(md_path.relative_to(cfg.project_root)),
+	}
+	meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+	# Render HTML for post
+	env = _env(cfg)
+	post_template = env.get_template("post.html")
+	html = markdown2.markdown(post.markdown)
+	post_html = post_template.render(
+		title=post.title,
+		content=html,
+		created_at=post.created_at,
+		base_url=cfg.site.base_url,
+		year=datetime.now().year,
 	)
-	output_path.write_text(html, encoding="utf-8")
+	post_out = cfg.site_dir / "posts" / f"{post.slug}.html"
+	post_out.write_text(post_html, encoding="utf-8")
 
-	return f"posts/{file_name}"
+	# Rebuild index page
+	build_index(cfg)
+	_copy_assets(cfg)
+
+	return PostRecord(
+		title=post.title,
+		slug=post.slug,
+		created_at_iso=post.created_at.isoformat(),
+		excerpt=excerpt,
+		markdown_path=str(md_path),
+		html_path=str(post_out),
+	)
 
 
-def build_index(
-	output_dir: str,
-	templates_dir: str,
-	site_name: str,
-	site_tagline: str,
-	posts: List[dict],
-	asset_prefix: str = "",
-) -> None:
-	env = build_env(templates_dir)
-	index_tpl = env.get_template("index.html")
+def _load_all_posts(cfg: AppConfig) -> List[Dict[str, Any]]:
+	posts: List[Dict[str, Any]] = []
+	if not cfg.content_dir.exists():
+		return posts
+	for meta_file in sorted(cfg.content_dir.glob("*.json")):
+		try:
+			data = json.loads(meta_file.read_text(encoding="utf-8"))
+			posts.append(data)
+		except Exception:
+			continue
+	# newest first
+	posts.sort(key=lambda d: d.get("created_at", ""), reverse=True)
+	return posts
 
-	index_html = index_tpl.render(
-		site_name=site_name,
-		site_tagline=site_tagline,
+
+def build_index(cfg: AppConfig) -> None:
+	env = _env(cfg)
+	index_template = env.get_template("index.html")
+	posts = _load_all_posts(cfg)
+	index_html = index_template.render(
 		posts=posts,
-		asset_prefix=asset_prefix,
+		base_url=cfg.site.base_url,
+		year=datetime.now().year,
 	)
-	Path(output_dir).mkdir(parents=True, exist_ok=True)
-	(Path(output_dir) / "index.html").write_text(index_html, encoding="utf-8")
-
-
-def build_about(
-	output_dir: str,
-	templates_dir: str,
-	site_name: str,
-	site_tagline: str,
-	asset_prefix: str = "",
-) -> None:
-	env = build_env(templates_dir)
-	about_tpl = env.get_template("about.html")
-	about_html = about_tpl.render(
-		site_name=site_name,
-		site_tagline=site_tagline,
-		title=f"About — {site_name}",
-		asset_prefix=asset_prefix,
-	)
-	Path(output_dir).mkdir(parents=True, exist_ok=True)
-	(Path(output_dir) / "about.html").write_text(about_html, encoding="utf-8")
+	(cfg.site_dir).mkdir(parents=True, exist_ok=True)
+	(cfg.site_dir / "index.html").write_text(index_html, encoding="utf-8")
 
